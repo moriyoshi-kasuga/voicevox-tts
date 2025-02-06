@@ -1,0 +1,7 @@
+[package]
+name = "voicebox-tts"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+vvcore = "0.0.2"
