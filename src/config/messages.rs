@@ -8,14 +8,17 @@ pub type Message = Vec<MessageFormat>;
 
 #[serde_inline_default]
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
-pub struct MessagesConfig {
+pub struct VoiceConfig {
+    #[serde_inline_default(2)]
+    pub default_speaker_id: u32,
+
     #[serde_inline_default(gen_message!({0},"さんが参加しました"))]
     pub join: Message,
     #[serde_inline_default(gen_message!({0},"さんが退出しました"))]
     pub leave: Message,
 }
 
-impl DefaultConfig for MessagesConfig {}
+impl DefaultConfig for VoiceConfig {}
 
 #[derive(Debug)]
 pub enum MessageFormat {

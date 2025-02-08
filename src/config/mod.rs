@@ -1,10 +1,11 @@
 use core::panic;
 use std::io::Read;
 
-use messages::MessagesConfig;
+use messages::VoiceConfig;
 use serde::de::DeserializeOwned;
 use serde_inline_default::serde_inline_default;
 
+pub mod dictionary;
 pub mod messages;
 
 const CONFIG_PATH: &str = "config.toml";
@@ -19,10 +20,8 @@ fn test_default_config() {
 pub struct BotConfig {
     #[serde_inline_default(String::new())]
     pub discord_token: String,
-    #[serde_inline_default(2)]
-    pub default_speaker_id: u32,
-    #[serde_inline_default(MessagesConfig::gen_default_config())]
-    pub messages: MessagesConfig,
+    #[serde_inline_default(VoiceConfig::gen_default_config())]
+    pub voices: VoiceConfig,
 }
 
 trait DefaultConfig: DeserializeOwned {

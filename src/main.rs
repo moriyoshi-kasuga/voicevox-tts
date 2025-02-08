@@ -1,22 +1,35 @@
-use commands::ping::ping;
-use config::init_config;
-use poise::serenity_prelude::{ClientBuilder, GatewayIntents};
+use commands::{join::join, leave::leave};
+use config::{
+    dictionary::{init_dictionary, Dictionary},
+    init_config,
+    messages::VoiceConfig,
+};
+use poise::serenity_prelude::{ClientBuilder, FullEvent, GatewayIntents};
 use songbird::SerenityInit;
 use vvcore::*;
 
 pub mod commands;
 pub mod config;
+pub mod event;
+pub mod util;
 
-type Error = Box<dyn std::error::Error + Send + Sync>;
+pub type AnyError = Box<dyn std::error::Error + Send + Sync>;
 
-struct Data {
-    vvc: VoicevoxCore,
+pub type AnyResult<T> = Result<T, AnyError>;
+
+pub struct Data {
+    pub vvc: VoicevoxCore,
+    pub voice_config: VoiceConfig,
+    pub dictionary: Dictionary,
 }
 
-type Context<'a> = poise::Context<'a, Data, Error>;
+pub type Context<'a> = poise::Context<'a, Data, AnyError>;
+
+const INTENTS: poise::serenity_prelude::GatewayIntents =
+    GatewayIntents::non_privileged().union(GatewayIntents::MESSAGE_CONTENT);
 
 #[poise::command(slash_command)]
-async fn register(ctx: Context<'_>) -> Result<(), Error> {
+async fn register(ctx: Context<'_>) -> Result<(), AnyError> {
     poise::builtins::register_application_commands_buttons(ctx).await?;
     Ok(())
 }
@@ -32,9 +45,13 @@ async fn main() {
         panic!("please set discord token");
     };
 
+    let dictionary = init_dictionary();
+    let dict = dictionary.clone();
+
     let vvc = init_vvc();
 
-    let commands = vec![register(), ping()];
+    // COMMANDS
+    let commands = vec![register(), join(), leave()];
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
@@ -46,24 +63,43 @@ async fn main() {
                     }
                 })
             },
+            event_handler: |ctx, event, _framework, _data| {
+                Box::pin(async move {
+                    match event {
+                        FullEvent::VoiceStateUpdate { old: _, new } => {
+                            event::voice_state::handle_voice_state_update(ctx, new.guild_id)
+                                .await?;
+                        }
+                        FullEvent::Message { new_message } => {
+                            let _ = new_message;
+                        }
+                        _ => {}
+                    }
+                    Ok(())
+                })
+            },
             ..Default::default()
         })
         .setup(move |ctx, _ready, framework| {
             Box::pin(async move {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
-                Ok(Data { vvc })
+                Ok(Data {
+                    vvc,
+                    voice_config: config.voices,
+                    dictionary,
+                })
             })
         })
         .build();
 
-    let intents = GatewayIntents::non_privileged();
-
-    let client = ClientBuilder::new(config.discord_token, intents)
+    let client = ClientBuilder::new(config.discord_token, INTENTS)
         .framework(framework)
         .register_songbird()
         .await;
 
-    client.unwrap().start().await.unwrap()
+    client.unwrap().start().await.unwrap();
+
+    dict.save().await;
 }
 
 #[allow(clippy::unwrap_used)]
