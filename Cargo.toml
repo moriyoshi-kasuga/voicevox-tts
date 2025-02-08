@@ -5,3 +5,42 @@ edition = "2021"
 
 [dependencies]
 vvcore = "0.0.2"
+
+serde = "=1.0"
+serde_json = "=1.0"
+serde-inline-default = "=0.2"
+toml = "=0.8"
+
+tokio = { version = "=1.43", features = [
+    "macros",
+    "rt-multi-thread",
+    "signal",
+] }
+tracing = "=0.1"
+tracing-subscriber = "=0.3"
+tracing-futures = "=0.2"
+
+# serenity = { version = "=0.12", features = [
+#     "cache",
+#     "client",
+#     "standard_framework",
+#     "rustls_backend",
+# ] }
+songbird = { version = "=0.4", features = ["builtin-queue"] }
+poise = { version = "=0.6", default-features = false, features = ["cache"] }
+# serenity is using 0.11
+reqwest = "=0.11"
+symphonia = { version = "=0.5.4", features = ["aac", "mp3", "isomp4", "alac"] }
+
+[lints.rust]
+nonstandard_style = { level = "warn", priority = -1 }
+unreachable_pub = "warn"
+unused_import_braces = "warn"
+unused_lifetimes = "warn"
+
+[lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+print_stdout = "deny"
+print_stderr = "deny"
