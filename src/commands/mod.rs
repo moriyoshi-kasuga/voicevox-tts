@@ -1,6 +1,7 @@
 pub mod dict;
 pub mod join;
 pub mod leave;
+pub mod voice;
 
 macro_rules! only_guild {
     ($ctx:ident,$var:ident) => {

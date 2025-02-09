@@ -50,7 +50,7 @@ impl Dictionary {
 
     #[allow(clippy::unwrap_used)]
     pub async fn save(self) {
-        let text = toml::to_string(self.0.lock().await.deref()).unwrap();
+        let text = serde_json::to_string(self.0.lock().await.deref()).unwrap();
         std::fs::write(DICTIONARY_PATH, text).unwrap();
     }
 }

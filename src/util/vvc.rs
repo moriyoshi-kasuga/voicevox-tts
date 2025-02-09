@@ -4,21 +4,32 @@ use std::sync::Arc;
 
 use vvcore::VoicevoxCore;
 
-use crate::{cache::VoiceCache, config::dictionary::Dictionary, AnyResult};
+use crate::AnyResult;
+
+pub const VOICE_SELECT_MENU_CUSTOM_ID: &str = "voicevox_voice";
+
+pub const VOICE_CHARACTER: &[(&str, u32)] = &comptime::all_voices!();
 
 pub async fn gen_tts(
     text: &str,
-    vvc: Arc<VoicevoxCore>,
-    cache: VoiceCache,
-    dict: Dictionary,
+    bot_data: Arc<crate::BotData>,
     guild_id: GuildId,
     speaker_id: u32,
 ) -> AnyResult<Vec<u8>> {
-    let text = dict.replace(guild_id, text).await;
+    let text = if text.chars().count() > bot_data.config.voice.max_message_length {
+        text.chars()
+            .take(bot_data.config.voice.max_message_length)
+            .collect::<String>()
+    } else {
+        text.to_string()
+    };
+    let text = bot_data.dict.replace(guild_id, &text).await;
     let text = text.as_str();
 
+    let vvc = Arc::clone(&bot_data.vvc);
     let boxed = text.into();
-    let voice = cache
+    let voice = bot_data
+        .voice_cache
         .try_get_with((boxed, speaker_id), async move {
             gen_tts_without_cache(vvc, text, speaker_id)
                 .inspect(|_| {

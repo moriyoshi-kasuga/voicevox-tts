@@ -40,18 +40,11 @@ pub async fn handle_message(ctx: &Context, message: &Message) -> AnyResult<()> {
         return Ok(());
     }
 
-    let voice_config = &bot_data.config;
-    let vvc = &bot_data.vvc;
-    let cache = &bot_data.voice_cache;
-    let dict = &bot_data.dict;
-
     let audio = gen_tts(
         &message.content,
-        vvc.clone(),
-        cache.clone(),
-        dict.clone(),
+        bot_data.clone(),
         guild_id,
-        voice_config.default_speaker_id,
+        bot_data.get_spekar_id(guild_id, message.author.id).await,
     )
     .await?;
 

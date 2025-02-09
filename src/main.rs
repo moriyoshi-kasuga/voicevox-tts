@@ -2,10 +2,10 @@ use std::sync::Arc;
 
 use cache::{TtsChannel, VoiceCache};
 use commands::{join::join, leave::leave};
-use config::{
+use config::{init_config, BotConfig};
+use data::{
     dictionary::{init_dictionary, Dictionary},
-    init_config,
-    messages::VoiceConfig,
+    speaker::{init_speaker_dict, SpeakerDict},
 };
 use poise::serenity_prelude::{ClientBuilder, FullEvent, GatewayIntents};
 use songbird::{typemap::TypeMapKey, SerenityInit};
@@ -14,6 +14,7 @@ use vvcore::*;
 pub mod cache;
 pub mod commands;
 pub mod config;
+pub mod data;
 pub mod event;
 pub mod util;
 
@@ -44,9 +45,23 @@ pub async fn get_bot_data(ctx: &poise::serenity_prelude::Context) -> Arc<BotData
 pub struct BotData {
     pub dict: Dictionary,
     pub vvc: Arc<VoicevoxCore>,
-    pub config: Arc<VoiceConfig>,
+    pub config: Arc<BotConfig>,
     pub tts_channel: TtsChannel,
     pub voice_cache: VoiceCache,
+    pub speaker_dict: SpeakerDict,
+}
+
+impl BotData {
+    pub async fn get_spekar_id(
+        &self,
+        guild_id: poise::serenity_prelude::GuildId,
+        user_id: poise::serenity_prelude::UserId,
+    ) -> u32 {
+        self.speaker_dict
+            .get(guild_id, user_id)
+            .await
+            .unwrap_or(self.config.voice.default_speaker_id)
+    }
 }
 
 pub struct BotDataKey;
@@ -65,17 +80,23 @@ async fn main() {
 
     let config = init_config();
 
-    let voice_config = Arc::new(config.voices);
-    let voice_config_clone = voice_config.clone();
-
     let dictionary = init_dictionary();
     let dict = dictionary.clone();
+
+    let speaker_dict = init_speaker_dict();
+    let speaker_dict_clone = speaker_dict.clone();
 
     let vvc = Arc::new(init_vvc());
     let vv_clone = vvc.clone();
 
     // COMMANDS
-    let commands = vec![register(), join(), leave(), commands::dict::dict()];
+    let commands = vec![
+        register(),
+        join(),
+        leave(),
+        commands::dict::dict(),
+        commands::voice::voice(),
+    ];
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
@@ -95,6 +116,9 @@ async fn main() {
                         }
                         FullEvent::Message { new_message } => {
                             event::message::handle_message(ctx, new_message).await?;
+                        }
+                        FullEvent::InteractionCreate { interaction } => {
+                            event::interaction_create::interaction_create(ctx, interaction).await?;
                         }
                         _ => {}
                     }
@@ -122,15 +146,16 @@ async fn main() {
         write.insert::<BotDataKey>(Arc::new(BotData {
             dict: dict.clone(),
             vvc: vv_clone,
-            config: voice_config_clone,
+            voice_cache: VoiceCache::new(config.max_voice_cache),
+            config: Arc::new(config),
             tts_channel: TtsChannel::default(),
-            voice_cache: VoiceCache::new(config.voice_cache),
+            speaker_dict: speaker_dict_clone,
         }));
     }
 
     client.start().await.unwrap();
 
-    dict.save().await;
+    tokio::join!(dict.save(), speaker_dict.save());
 }
 
 #[allow(clippy::unwrap_used)]

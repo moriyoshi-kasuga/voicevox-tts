@@ -289,6 +289,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "comptime"
+version = "0.1.0"
+dependencies = [
+ "quote",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "concurrent-queue"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3364,6 +3373,7 @@ name = "voicebox-tts"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "comptime",
  "dotenvy",
  "moka",
  "poise",

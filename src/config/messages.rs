@@ -4,11 +4,10 @@ use poise::serenity_prelude::GuildId;
 use serde_inline_default::serde_inline_default;
 
 use macros::gen_message;
-use vvcore::VoicevoxCore;
 
-use crate::{cache::VoiceCache, util::vvc::gen_tts, AnyResult};
+use crate::{util::vvc::gen_tts, AnyResult};
 
-use super::{dictionary::Dictionary, DefaultConfig};
+use super::DefaultConfig;
 
 pub type Message = Vec<MessageFormat>;
 
@@ -17,6 +16,10 @@ pub type Message = Vec<MessageFormat>;
 pub struct VoiceConfig {
     #[serde_inline_default(2)]
     pub default_speaker_id: u32,
+    #[serde_inline_default(60)]
+    pub max_message_length: usize,
+    #[serde_inline_default("以下略".to_string())]
+    pub overed_message: String,
 
     #[serde_inline_default(gen_message!({0},"さんが参加しました"))]
     pub join: ConstMessage<1>,
@@ -52,9 +55,7 @@ impl<const N: usize> ConstMessage<N> {
 
     pub async fn process(
         &self,
-        vvc: Arc<VoicevoxCore>,
-        cache: VoiceCache,
-        dict: Dictionary,
+        bot_data: Arc<crate::BotData>,
         guild_id: GuildId,
         speaker_id: u32,
         args: &[&str; N],
@@ -67,15 +68,7 @@ impl<const N: usize> ConstMessage<N> {
                 MessageFormat::Arg(n) => args[*n],
             };
 
-            let voice = gen_tts(
-                text,
-                vvc.clone(),
-                cache.clone(),
-                dict.clone(),
-                guild_id,
-                speaker_id,
-            )
-            .await?;
+            let voice = gen_tts(text, bot_data.clone(), guild_id, speaker_id).await?;
 
             all_voice.extend(voice);
         }

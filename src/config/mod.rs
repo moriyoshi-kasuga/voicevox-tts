@@ -5,7 +5,6 @@ use messages::VoiceConfig;
 use serde::de::DeserializeOwned;
 use serde_inline_default::serde_inline_default;
 
-pub mod dictionary;
 pub mod messages;
 
 const CONFIG_PATH: &str = "config.toml";
@@ -19,9 +18,9 @@ fn test_default_config() {
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub struct BotConfig {
     #[serde_inline_default(20)]
-    pub voice_cache: u64,
+    pub max_voice_cache: u64,
     #[serde_inline_default(VoiceConfig::gen_default_config())]
-    pub voices: VoiceConfig,
+    pub voice: VoiceConfig,
 }
 
 trait DefaultConfig: DeserializeOwned {

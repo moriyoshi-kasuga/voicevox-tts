@@ -1,9 +1,19 @@
+[workspace]
+members = [".", "comptime"]
+resolver = "2"
+
 [package]
 name = "voicebox-tts"
 version = "0.1.0"
 edition = "2021"
 
+[workspace.dependencies]
+serde = { version = "=1.0", features = ["derive"] }
+serde_json = "=1.0"
+
 [dependencies]
+comptime = { path = "./comptime" }
+
 vvcore = "0.0.2"
 
 moka = { version = "=0.12", features = ["future"] }
@@ -11,8 +21,8 @@ moka = { version = "=0.12", features = ["future"] }
 dotenvy = "=0.15"
 anyhow = "=1.0"
 
-serde = "=1.0"
-serde_json = "=1.0"
+serde.workspace = true
+serde_json.workspace = true
 serde-inline-default = "=0.2"
 toml = "=0.8"
 
@@ -37,13 +47,13 @@ poise = { version = "=0.6", default-features = false, features = ["cache"] }
 reqwest = "=0.11"
 symphonia = { version = "=0.5.4", features = ["aac", "mp3", "isomp4", "alac"] }
 
-[lints.rust]
+[workspace.lints.rust]
 nonstandard_style = { level = "warn", priority = -1 }
 unreachable_pub = "warn"
 unused_import_braces = "warn"
 unused_lifetimes = "warn"
 
-[lints.clippy]
+[workspace.lints.clippy]
 unwrap_used = "deny"
 expect_used = "deny"
 panic = "deny"

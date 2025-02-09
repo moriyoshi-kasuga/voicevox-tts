@@ -92,8 +92,6 @@ async fn event(
     guild_id: GuildId,
 ) -> AnyResult<()> {
     let bot_data = get_bot_data(ctx).await;
-    let voice_config = &bot_data.config;
-    let vvc = &bot_data.vvc;
 
     if !is_human(&member.user) {
         return Ok(());
@@ -105,34 +103,23 @@ async fn event(
         Event::Leave => tracing::info!("leave event of {}", name),
     }
 
-    let cache = &bot_data.voice_cache;
-    let dict = &bot_data.dict;
+    let speaker_id = bot_data.get_spekar_id(guild_id, member.user.id).await;
 
     let audio = match event {
         Event::Leave => {
-            voice_config
+            bot_data
+                .config
+                .voice
                 .leave
-                .process(
-                    vvc.clone(),
-                    cache.clone(),
-                    dict.clone(),
-                    guild_id,
-                    voice_config.default_speaker_id,
-                    &[name],
-                )
+                .process(bot_data.clone(), guild_id, speaker_id, &[name])
                 .await?
         }
         Event::Join => {
-            voice_config
+            bot_data
+                .config
+                .voice
                 .join
-                .process(
-                    vvc.clone(),
-                    cache.clone(),
-                    dict.clone(),
-                    guild_id,
-                    voice_config.default_speaker_id,
-                    &[name],
-                )
+                .process(bot_data.clone(), guild_id, speaker_id, &[name])
                 .await?
         }
     };
