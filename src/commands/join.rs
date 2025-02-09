@@ -6,7 +6,8 @@ use crate::{
     AnyResult, Context,
 };
 
-#[poise::command(slash_command, guild_only)]
+/// Voice channel に入ります
+#[poise::command(slash_command, guild_only, aliases("sjoin"))]
 pub(crate) async fn join(ctx: Context<'_>) -> AnyResult<()> {
     let (guild_id, channel_id) = {
         let Some(guild) = ctx.guild() else {

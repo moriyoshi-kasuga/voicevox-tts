@@ -6,7 +6,8 @@ use crate::{
     AnyResult, Context,
 };
 
-#[poise::command(slash_command, guild_only)]
+/// Voice channel から切断します
+#[poise::command(slash_command, guild_only, aliases("slaeve"))]
 pub(crate) async fn leave(ctx: Context<'_>) -> AnyResult<()> {
     let Some(guild_id) = ctx.guild_id() else {
         ctx.reply("Guild内でしか使えません").await?;
