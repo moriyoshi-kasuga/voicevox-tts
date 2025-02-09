@@ -7,8 +7,7 @@ use crate::{
     util::{
         bird::{bird_enqueue, bird_laeve, get_songbird},
         discord::{get_user_read_name, is_human},
-        get_tts_channel, get_voice_config, get_vvc,
-        vvc::gen_tts,
+        get_dict, get_tts_channel, get_voice_cache, get_voice_config, get_vvc,
     },
     AnyResult,
 };
@@ -105,12 +104,37 @@ async fn event(
         Event::Leave => tracing::info!("leave event of {}", name),
     }
 
-    let text = match event {
-        Event::Leave => voice_config.leave.format(&[name]),
-        Event::Join => voice_config.join.format(&[name]),
-    };
+    let cache = get_voice_cache(ctx).await?;
+    let dict = get_dict(ctx).await?;
 
-    let audio = gen_tts(vvc.clone(), &text, voice_config.default_speaker_id)?;
+    let audio = match event {
+        Event::Leave => {
+            voice_config
+                .leave
+                .process(
+                    vvc,
+                    cache,
+                    dict,
+                    guild_id,
+                    voice_config.default_speaker_id,
+                    &[name],
+                )
+                .await?
+        }
+        Event::Join => {
+            voice_config
+                .join
+                .process(
+                    vvc,
+                    cache,
+                    dict,
+                    guild_id,
+                    voice_config.default_speaker_id,
+                    &[name],
+                )
+                .await?
+        }
+    };
 
     bird_enqueue(manager, guild_id, audio).await?;
 

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use cache::{TtsChannel, TtsChannelKey};
+use cache::{TtsChannel, TtsChannelKey, VoiceCache, VoiceCacheKey};
 use commands::{join::join, leave::leave};
 use config::{dictionary::init_dictionary, init_config};
 use poise::serenity_prelude::{ClientBuilder, FullEvent, GatewayIntents};
@@ -97,6 +97,7 @@ async fn main() {
         write.insert::<VoicevoxCoreKey>(vv_clone);
         write.insert::<VoiceConfigKey>(voice_config_clone);
         write.insert::<TtsChannelKey>(TtsChannel::default());
+        write.insert::<VoiceCacheKey>(VoiceCache::new(config.voice_cache));
     }
 
     client.start().await.unwrap();

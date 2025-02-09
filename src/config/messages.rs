@@ -1,8 +1,14 @@
+use std::sync::Arc;
+
+use poise::serenity_prelude::GuildId;
 use serde_inline_default::serde_inline_default;
 
 use macros::gen_message;
+use vvcore::VoicevoxCore;
 
-use super::DefaultConfig;
+use crate::{cache::VoiceCache, util::vvc::gen_tts, AnyResult};
+
+use super::{dictionary::Dictionary, DefaultConfig};
 
 pub type Message = Vec<MessageFormat>;
 
@@ -42,6 +48,39 @@ impl<const N: usize> ConstMessage<N> {
         }
 
         text
+    }
+
+    pub async fn process(
+        &self,
+        vvc: Arc<VoicevoxCore>,
+        cache: VoiceCache,
+        dict: Dictionary,
+        guild_id: GuildId,
+        speaker_id: u32,
+        args: &[&str; N],
+    ) -> AnyResult<Vec<u8>> {
+        let mut all_voice = Vec::<u8>::new();
+
+        for i in &self.0 {
+            let text = match i {
+                MessageFormat::Text(s) => s,
+                MessageFormat::Arg(n) => args[*n],
+            };
+
+            let voice = gen_tts(
+                text,
+                vvc.clone(),
+                cache.clone(),
+                dict.clone(),
+                guild_id,
+                speaker_id,
+            )
+            .await?;
+
+            all_voice.extend(voice);
+        }
+
+        Ok(all_voice)
     }
 }
 

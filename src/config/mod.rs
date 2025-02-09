@@ -18,6 +18,8 @@ fn test_default_config() {
 #[serde_inline_default]
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub struct BotConfig {
+    #[serde_inline_default(20)]
+    pub voice_cache: u64,
     #[serde_inline_default(VoiceConfig::gen_default_config())]
     pub voices: VoiceConfig,
 }

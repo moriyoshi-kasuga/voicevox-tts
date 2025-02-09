@@ -6,7 +6,7 @@ use songbird::typemap::TypeMapKey;
 use vvcore::VoicevoxCore;
 
 use crate::{
-    cache::{TtsChannel, TtsChannelKey},
+    cache::{TtsChannel, TtsChannelKey, VoiceCache, VoiceCacheKey},
     config::{dictionary::Dictionary, messages::VoiceConfig},
     AnyResult,
 };
@@ -75,4 +75,15 @@ pub async fn get_tts_channel(ctx: &Context) -> AnyResult<TtsChannel> {
         .context("TtsChannel is not initialized")?;
 
     Ok(tts_channel)
+}
+
+pub async fn get_voice_cache(ctx: &Context) -> AnyResult<VoiceCache> {
+    let data = ctx.data.read().await;
+
+    let voice_cache = data
+        .get::<VoiceCacheKey>()
+        .cloned()
+        .context("VoiceCache is not initialized")?;
+
+    Ok(voice_cache)
 }

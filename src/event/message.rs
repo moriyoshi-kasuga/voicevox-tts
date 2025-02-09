@@ -4,7 +4,7 @@ use crate::{
     util::{
         bird::{bird_enqueue, get_songbird},
         discord::is_human,
-        get_tts_channel, get_voice_config, get_vvc,
+        get_dict, get_tts_channel, get_voice_cache, get_voice_config, get_vvc,
         vvc::gen_tts,
     },
     AnyResult,
@@ -41,8 +41,18 @@ pub async fn handle_message(ctx: &Context, message: &Message) -> AnyResult<()> {
 
     let voice_config = get_voice_config(ctx).await?;
     let vvc = get_vvc(ctx).await?;
+    let cache = get_voice_cache(ctx).await?;
+    let dict = get_dict(ctx).await?;
 
-    let audio = gen_tts(vvc, &message.content, voice_config.default_speaker_id)?;
+    let audio = gen_tts(
+        &message.content,
+        vvc,
+        cache,
+        dict,
+        guild_id,
+        voice_config.default_speaker_id,
+    )
+    .await?;
 
     bird_enqueue(manager, guild_id, audio).await?;
 

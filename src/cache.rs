@@ -36,3 +36,11 @@ pub struct TtsChannelKey;
 impl TypeMapKey for TtsChannelKey {
     type Value = TtsChannel;
 }
+
+pub type VoiceCache = moka::future::Cache<(Box<str>, u32), Vec<u8>>;
+
+pub struct VoiceCacheKey;
+
+impl TypeMapKey for VoiceCacheKey {
+    type Value = VoiceCache;
+}

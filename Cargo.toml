@@ -6,6 +6,8 @@ edition = "2021"
 [dependencies]
 vvcore = "0.0.2"
 
+moka = { version = "=0.12", features = ["future"] }
+
 dotenvy = "=0.15"
 anyhow = "=1.0"
 
