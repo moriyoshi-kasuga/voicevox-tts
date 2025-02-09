@@ -3,6 +3,7 @@ use poise::serenity_prelude::{Context, Message};
 use crate::{
     util::{
         bird::{bird_enqueue, get_songbird},
+        discord::is_human,
         get_tts_channel, get_voice_config, get_vvc,
         vvc::gen_tts,
     },
@@ -29,6 +30,12 @@ pub async fn handle_message(ctx: &Context, message: &Message) -> AnyResult<()> {
         .has_eq(guild_id.into(), message.channel_id.into())
         .await
     {
+        return Ok(());
+    }
+
+    let is_human = is_human(&message.author);
+
+    if !is_human {
         return Ok(());
     }
 
