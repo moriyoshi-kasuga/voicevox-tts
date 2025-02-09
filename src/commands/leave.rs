@@ -1,4 +1,5 @@
 use crate::{
+    commands::only_guild,
     util::{
         bird::{bird_laeve, get_songbird},
         get_tts_channel,
@@ -9,10 +10,7 @@ use crate::{
 /// Voice channel から切断します
 #[poise::command(slash_command, guild_only, aliases("slaeve"))]
 pub(crate) async fn leave(ctx: Context<'_>) -> AnyResult<()> {
-    let Some(guild_id) = ctx.guild_id() else {
-        ctx.reply("Guild内でしか使えません").await?;
-        return Ok(());
-    };
+    only_guild!(ctx, guild_id);
 
     let manager = get_songbird(ctx.serenity_context()).await?;
 

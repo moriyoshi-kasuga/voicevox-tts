@@ -1,4 +1,5 @@
 use crate::{
+    commands::only_guild,
     util::{
         bird::{bird_join, get_songbird},
         get_tts_channel,
@@ -10,10 +11,7 @@ use crate::{
 #[poise::command(slash_command, guild_only, aliases("sjoin"))]
 pub(crate) async fn join(ctx: Context<'_>) -> AnyResult<()> {
     let (guild_id, channel_id) = {
-        let Some(guild) = ctx.guild() else {
-            ctx.reply("Guild内でしか使えません").await?;
-            return Ok(());
-        };
+        only_guild!(ctx, guild);
 
         let channel_id = guild
             .voice_states

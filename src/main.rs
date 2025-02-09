@@ -49,7 +49,7 @@ async fn main() {
     let vv_clone = vvc.clone();
 
     // COMMANDS
-    let commands = vec![register(), join(), leave()];
+    let commands = vec![register(), join(), leave(), commands::dict::dict()];
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
