@@ -30,12 +30,12 @@ impl Dictionary {
         map.remove(key).is_some()
     }
 
-    pub async fn get_dist(&self, guild_id: GuildId) -> CreateEmbed {
+    pub async fn create_embed(&self, guild_id: GuildId) -> CreateEmbed {
         let embed = CreateEmbed::new();
         let mut map = self.0.lock().await;
         let map = map.entry(guild_id).or_default();
 
-        embed.fields(map.iter().map(|(k, v)| (k, format!("`{v}`"), false)))
+        embed.fields(map.iter().map(|(k, v)| (k, format!("`{v}`"), true)))
     }
 
     pub async fn replace(&self, guild_id: GuildId, text: &str) -> String {

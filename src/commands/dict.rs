@@ -49,11 +49,12 @@ pub(crate) async fn remove(ctx: Context<'_>, key: String) -> AnyResult<()> {
 pub(crate) async fn list(ctx: Context<'_>) -> AnyResult<()> {
     only_guild!(ctx, guild_id);
     let dict = get_dict(ctx.serenity_context()).await?;
-    let embed = dict.get_dist(guild_id).await;
+    let embed = dict.create_embed(guild_id).await;
     let guild_name = guild_id
         .name(ctx.cache())
         .unwrap_or_else(|| "サーバー".to_string());
     let embed = embed.title(format!("📕 {}の辞書", guild_name));
-    ctx.send(CreateReply::default().embed(embed)).await?;
+    ctx.send(CreateReply::default().embed(embed).ephemeral(true))
+        .await?;
     Ok(())
 }
