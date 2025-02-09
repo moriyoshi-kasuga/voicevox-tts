@@ -1,9 +1,4 @@
-use std::{
-    collections::{hash_map::Entry, HashMap},
-    io::Read,
-    ops::Deref,
-    sync::Arc,
-};
+use std::{collections::HashMap, io::Read, ops::Deref, sync::Arc};
 
 use poise::serenity_prelude::{GuildId, UserId};
 use tokio::sync::Mutex;
@@ -12,16 +7,10 @@ use tokio::sync::Mutex;
 pub struct SpeakerDict(Arc<Mutex<HashMap<GuildId, HashMap<UserId, u32>>>>);
 
 impl SpeakerDict {
-    pub async fn set(&self, guild_id: GuildId, key: UserId, value: u32) -> bool {
+    pub async fn set(&self, guild_id: GuildId, key: UserId, value: u32) {
         let mut map = self.0.lock().await;
         let map = map.entry(guild_id).or_default();
-        match map.entry(key) {
-            Entry::Vacant(entry) => {
-                entry.insert(value);
-                true
-            }
-            _ => false,
-        }
+        map.insert(key, value);
     }
 
     pub async fn get(&self, guild_id: GuildId, key: UserId) -> Option<u32> {

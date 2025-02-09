@@ -21,9 +21,9 @@ pub struct VoiceConfig {
     #[serde_inline_default("以下略".to_string())]
     pub overed_message: String,
 
-    #[serde_inline_default(gen_message!({0},"さんが参加しました"))]
+    #[serde_inline_default(gen_message!({0},"が参加しました"))]
     pub join: ConstMessage<1>,
-    #[serde_inline_default(gen_message!({0},"さんが退出しました"))]
+    #[serde_inline_default(gen_message!({0},"が退出しました"))]
     pub leave: ConstMessage<1>,
 }
 

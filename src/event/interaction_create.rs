@@ -18,7 +18,11 @@ pub async fn interaction_create(ctx: &Context, interaction: &Interaction) -> Any
         return Ok(());
     };
 
-    if component.data.custom_id != VOICE_SELECT_MENU_CUSTOM_ID {
+    if !component
+        .data
+        .custom_id
+        .starts_with(VOICE_SELECT_MENU_CUSTOM_ID)
+    {
         return Ok(());
     };
 
@@ -27,21 +31,14 @@ pub async fn interaction_create(ctx: &Context, interaction: &Interaction) -> Any
     };
 
     let Some(selected) = values.first() else {
-        tracing::warn!("Voice select menu is empty");
         return Ok(());
     };
 
-    tracing::info!("selected voice: {}", selected);
-
     let selected = selected.parse::<u32>()?;
-
-    tracing::info!("selected speaker id: {}", selected);
 
     let Some((name, _)) = VOICE_CHARACTER.iter().find(|v| v.1 == selected) else {
         return Ok(());
     };
-
-    tracing::info!("selected find speaker id: {} {}", name, selected);
 
     let data = &get_bot_data(ctx).await.speaker_dict;
     data.set(guild_id, component.user.id, selected).await;
@@ -53,7 +50,6 @@ pub async fn interaction_create(ctx: &Context, interaction: &Interaction) -> Any
     let builder = CreateInteractionResponse::Message(message);
 
     component.create_response(&ctx.http, builder).await?;
-    // CreateInteractionResponse::execute(self, cache_http, ctx)
 
     Ok(())
 }

@@ -33,10 +33,10 @@ pub async fn gen_tts(
         .try_get_with((boxed, speaker_id), async move {
             gen_tts_without_cache(vvc, text, speaker_id)
                 .inspect(|_| {
-                    tracing::info!("success generate voice of {text} with speaker {speaker_id}")
+                    tracing::info!("success generate voice of \"{text}\" with speaker {speaker_id}")
                 })
                 .inspect_err(|_| {
-                    tracing::error!("failed generate voice of {text} with speaker {speaker_id}")
+                    tracing::error!("failed generate voice of \"{text}\" with speaker {speaker_id}")
                 })
         })
         .await

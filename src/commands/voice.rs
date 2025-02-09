@@ -13,23 +13,27 @@ use crate::{
 /// 音声の声を切り替えます
 #[poise::command(slash_command, guild_only, aliases("svoice"))]
 pub(crate) async fn voice(ctx: Context<'_>) -> AnyResult<()> {
-    let options = VOICE_CHARACTER
-        .iter()
-        .map(|v| CreateSelectMenuOption::new(v.0, v.1.to_string()))
-        // TODO:
-        .take(20)
+    let components: Vec<CreateActionRow> = VOICE_CHARACTER
+        .chunks(20)
+        .enumerate()
+        .map(|(i, v)| {
+            let options: Vec<CreateSelectMenuOption> = v
+                .iter()
+                .map(|v| CreateSelectMenuOption::new(v.0, v.1.to_string()))
+                .collect();
+
+            let select_menu = CreateSelectMenu::new(
+                format!("{}-{}", VOICE_SELECT_MENU_CUSTOM_ID, i),
+                CreateSelectMenuKind::String { options },
+            );
+
+            CreateActionRow::SelectMenu(select_menu)
+        })
         .collect();
-
-    let select_menu = CreateSelectMenu::new(
-        VOICE_SELECT_MENU_CUSTOM_ID,
-        CreateSelectMenuKind::String { options },
-    );
-
-    let component = CreateActionRow::SelectMenu(select_menu);
 
     let replay = CreateReply::default()
         .ephemeral(true)
-        .components(vec![component]);
+        .components(components);
 
     ctx.send(replay).await?;
     Ok(())

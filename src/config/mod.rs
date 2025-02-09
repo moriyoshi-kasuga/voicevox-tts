@@ -1,4 +1,3 @@
-use core::panic;
 use std::io::Read;
 
 use messages::VoiceConfig;
@@ -37,10 +36,11 @@ pub fn init_config() -> BotConfig {
     tracing::info!("loading config");
 
     if !std::fs::exists(CONFIG_PATH).unwrap() {
-        let text = toml::to_string(&BotConfig::gen_default_config()).unwrap();
+        let default = BotConfig::gen_default_config();
+        let text = toml::to_string(&default).unwrap();
         std::fs::write(CONFIG_PATH, text).unwrap();
-
-        panic!("config.toml not found, generated default config. please set discord token");
+        tracing::info!("config.toml not found, generated default config");
+        return default;
     };
     let mut file = std::fs::File::open(CONFIG_PATH).unwrap();
     let mut text = String::new();
