@@ -1,11 +1,14 @@
 use std::sync::Arc;
 
-use cache::{TtsChannel, TtsChannelKey, VoiceCache, VoiceCacheKey};
+use cache::{TtsChannel, VoiceCache};
 use commands::{join::join, leave::leave};
-use config::{dictionary::init_dictionary, init_config};
+use config::{
+    dictionary::{init_dictionary, Dictionary},
+    init_config,
+    messages::VoiceConfig,
+};
 use poise::serenity_prelude::{ClientBuilder, FullEvent, GatewayIntents};
-use songbird::SerenityInit;
-use util::{DictionaryKey, VoiceConfigKey, VoicevoxCoreKey};
+use songbird::{typemap::TypeMapKey, SerenityInit};
 use vvcore::*;
 
 pub mod cache;
@@ -27,6 +30,29 @@ const INTENTS: poise::serenity_prelude::GatewayIntents =
 async fn register(ctx: Context<'_>) -> Result<(), AnyError> {
     poise::builtins::register_application_commands_buttons(ctx).await?;
     Ok(())
+}
+
+pub async fn get_bot_data(ctx: &poise::serenity_prelude::Context) -> Arc<BotData> {
+    let data = ctx.data.read().await;
+
+    #[allow(clippy::expect_used)]
+    data.get::<BotDataKey>()
+        .cloned()
+        .expect("BotDataKey is not initialized")
+}
+
+pub struct BotData {
+    pub dict: Dictionary,
+    pub vvc: Arc<VoicevoxCore>,
+    pub config: Arc<VoiceConfig>,
+    pub tts_channel: TtsChannel,
+    pub voice_cache: VoiceCache,
+}
+
+pub struct BotDataKey;
+
+impl TypeMapKey for BotDataKey {
+    type Value = Arc<BotData>;
 }
 
 #[tokio::main]
@@ -93,11 +119,13 @@ async fn main() {
 
     {
         let mut write = client.data.write().await;
-        write.insert::<DictionaryKey>(dict.clone());
-        write.insert::<VoicevoxCoreKey>(vv_clone);
-        write.insert::<VoiceConfigKey>(voice_config_clone);
-        write.insert::<TtsChannelKey>(TtsChannel::default());
-        write.insert::<VoiceCacheKey>(VoiceCache::new(config.voice_cache));
+        write.insert::<BotDataKey>(Arc::new(BotData {
+            dict: dict.clone(),
+            vvc: vv_clone,
+            config: voice_config_clone,
+            tts_channel: TtsChannel::default(),
+            voice_cache: VoiceCache::new(config.voice_cache),
+        }));
     }
 
     client.start().await.unwrap();

@@ -1,10 +1,10 @@
 use poise::serenity_prelude::{Context, Message};
 
 use crate::{
+    get_bot_data,
     util::{
         bird::{bird_enqueue, get_songbird},
         discord::is_human,
-        get_dict, get_tts_channel, get_voice_cache, get_voice_config, get_vvc,
         vvc::gen_tts,
     },
     AnyResult,
@@ -24,7 +24,8 @@ pub async fn handle_message(ctx: &Context, message: &Message) -> AnyResult<()> {
         return Ok(());
     };
 
-    let tts_channel = get_tts_channel(ctx).await?;
+    let bot_data = get_bot_data(ctx).await;
+    let tts_channel = &bot_data.tts_channel;
 
     if !tts_channel
         .has_eq(guild_id.into(), message.channel_id.into())
@@ -39,16 +40,16 @@ pub async fn handle_message(ctx: &Context, message: &Message) -> AnyResult<()> {
         return Ok(());
     }
 
-    let voice_config = get_voice_config(ctx).await?;
-    let vvc = get_vvc(ctx).await?;
-    let cache = get_voice_cache(ctx).await?;
-    let dict = get_dict(ctx).await?;
+    let voice_config = &bot_data.config;
+    let vvc = &bot_data.vvc;
+    let cache = &bot_data.voice_cache;
+    let dict = &bot_data.dict;
 
     let audio = gen_tts(
         &message.content,
-        vvc,
-        cache,
-        dict,
+        vvc.clone(),
+        cache.clone(),
+        dict.clone(),
         guild_id,
         voice_config.default_speaker_id,
     )

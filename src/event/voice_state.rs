@@ -4,10 +4,10 @@ use poise::serenity_prelude::{Channel, Context, GuildId, Member, VoiceState};
 use songbird::Songbird;
 
 use crate::{
+    get_bot_data,
     util::{
         bird::{bird_enqueue, bird_laeve, get_songbird},
         discord::{get_user_read_name, is_human},
-        get_dict, get_tts_channel, get_voice_cache, get_voice_config, get_vvc,
     },
     AnyResult,
 };
@@ -72,9 +72,9 @@ pub async fn handle_voice_state_update(
         return Ok(());
     }
 
-    let tts_channel = get_tts_channel(ctx).await?;
+    let bot_data = get_bot_data(ctx).await;
 
-    bird_laeve(manager, tts_channel, guild_id).await?;
+    bird_laeve(manager, bot_data.tts_channel.clone(), guild_id).await?;
 
     Ok(())
 }
@@ -91,8 +91,9 @@ async fn event(
     member: &Member,
     guild_id: GuildId,
 ) -> AnyResult<()> {
-    let voice_config = get_voice_config(ctx).await?;
-    let vvc = get_vvc(ctx).await?;
+    let bot_data = get_bot_data(ctx).await;
+    let voice_config = &bot_data.config;
+    let vvc = &bot_data.vvc;
 
     if !is_human(&member.user) {
         return Ok(());
@@ -104,17 +105,17 @@ async fn event(
         Event::Leave => tracing::info!("leave event of {}", name),
     }
 
-    let cache = get_voice_cache(ctx).await?;
-    let dict = get_dict(ctx).await?;
+    let cache = &bot_data.voice_cache;
+    let dict = &bot_data.dict;
 
     let audio = match event {
         Event::Leave => {
             voice_config
                 .leave
                 .process(
-                    vvc,
-                    cache,
-                    dict,
+                    vvc.clone(),
+                    cache.clone(),
+                    dict.clone(),
                     guild_id,
                     voice_config.default_speaker_id,
                     &[name],
@@ -125,9 +126,9 @@ async fn event(
             voice_config
                 .join
                 .process(
-                    vvc,
-                    cache,
-                    dict,
+                    vvc.clone(),
+                    cache.clone(),
+                    dict.clone(),
                     guild_id,
                     voice_config.default_speaker_id,
                     &[name],

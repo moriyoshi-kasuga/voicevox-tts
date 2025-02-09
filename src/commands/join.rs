@@ -1,9 +1,7 @@
 use crate::{
     commands::only_guild,
-    util::{
-        bird::{bird_join, get_songbird},
-        get_tts_channel,
-    },
+    get_bot_data,
+    util::bird::{bird_join, get_songbird},
     AnyResult, Context,
 };
 
@@ -33,9 +31,16 @@ pub(crate) async fn join(ctx: Context<'_>) -> AnyResult<()> {
     let serenity_context = ctx.serenity_context();
 
     let manager = get_songbird(serenity_context).await?;
-    let tts_channel = get_tts_channel(serenity_context).await?;
+    let bot_data = get_bot_data(serenity_context).await;
 
-    bird_join(manager, tts_channel, guild_id, channel_id, ctx.channel_id()).await?;
+    bird_join(
+        manager,
+        bot_data.tts_channel.clone(),
+        guild_id,
+        channel_id,
+        ctx.channel_id(),
+    )
+    .await?;
 
     ctx.say("Voice channel に接続しました！").await?;
 

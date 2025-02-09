@@ -1,6 +1,6 @@
 use poise::CreateReply;
 
-use crate::{commands::only_guild, util::get_dict, AnyResult, Context};
+use crate::{commands::only_guild, get_bot_data, AnyResult, Context};
 
 /// 辞書を操作します
 #[poise::command(
@@ -20,7 +20,7 @@ pub(crate) async fn dict(ctx: Context<'_>) -> AnyResult<()> {
 #[poise::command(slash_command)]
 pub(crate) async fn add(ctx: Context<'_>, key: String, value: String) -> AnyResult<()> {
     only_guild!(ctx, guild_id);
-    let dict = get_dict(ctx.serenity_context()).await?;
+    let dict = &get_bot_data(ctx.serenity_context()).await.dict;
     let text = if dict.set(guild_id, key.clone(), value.clone()).await {
         format!("`{}`の読み方を`{}`として辞書に登録しました。", key, value)
     } else {
@@ -34,7 +34,7 @@ pub(crate) async fn add(ctx: Context<'_>, key: String, value: String) -> AnyResu
 #[poise::command(slash_command)]
 pub(crate) async fn remove(ctx: Context<'_>, key: String) -> AnyResult<()> {
     only_guild!(ctx, guild_id);
-    let dict = get_dict(ctx.serenity_context()).await?;
+    let dict = &get_bot_data(ctx.serenity_context()).await.dict;
     let text = if dict.remove(guild_id, &key).await {
         format!("辞書から`{}`を削除しました。", key)
     } else {
@@ -48,7 +48,7 @@ pub(crate) async fn remove(ctx: Context<'_>, key: String) -> AnyResult<()> {
 #[poise::command(slash_command)]
 pub(crate) async fn list(ctx: Context<'_>) -> AnyResult<()> {
     only_guild!(ctx, guild_id);
-    let dict = get_dict(ctx.serenity_context()).await?;
+    let dict = &get_bot_data(ctx.serenity_context()).await.dict;
     let embed = dict.create_embed(guild_id).await;
     let guild_name = guild_id
         .name(ctx.cache())
