@@ -1,8 +1,10 @@
+use crate::cache::TtsChannel;
 use crate::AnyResult;
 use anyhow::anyhow;
 
 use anyhow::Context as _;
 use poise::serenity_prelude::Context;
+use songbird::id::ChannelId;
 use songbird::{id::GuildId, input::Input, Call, Songbird};
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -14,6 +16,35 @@ pub async fn get_songbird(ctx: &Context) -> AnyResult<Arc<Songbird>> {
         .context("Songbird voice client is not initialized")?;
 
     Ok(songbird)
+}
+
+pub async fn bird_join(
+    manager: Arc<Songbird>,
+    tts_channel: TtsChannel,
+    guild_id: impl Into<GuildId>,
+    channel_id: impl Into<ChannelId>,
+    text_channel_id: impl Into<ChannelId>,
+) -> AnyResult<()> {
+    let guild_id = guild_id.into();
+    let channel_id = channel_id.into();
+
+    manager.join(guild_id, channel_id).await?;
+    tts_channel.set(guild_id, text_channel_id.into()).await;
+
+    Ok(())
+}
+
+pub async fn bird_laeve(
+    manager: Arc<Songbird>,
+    tts_channel: TtsChannel,
+    guild_id: impl Into<GuildId>,
+) -> AnyResult<()> {
+    let guild_id = guild_id.into();
+
+    manager.remove(guild_id).await?;
+    tts_channel.remove(guild_id).await;
+
+    Ok(())
 }
 
 pub async fn bird_enqueue<T: Into<Input>>(

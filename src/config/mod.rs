@@ -18,8 +18,6 @@ fn test_default_config() {
 #[serde_inline_default]
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub struct BotConfig {
-    #[serde_inline_default(String::new())]
-    pub discord_token: String,
     #[serde_inline_default(VoiceConfig::gen_default_config())]
     pub voices: VoiceConfig,
 }

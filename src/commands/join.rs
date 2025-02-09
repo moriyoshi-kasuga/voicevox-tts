@@ -1,4 +1,10 @@
-use crate::{util::bird::get_songbird, AnyResult, Context};
+use crate::{
+    util::{
+        bird::{bird_join, get_songbird},
+        get_tts_channel,
+    },
+    AnyResult, Context,
+};
 
 #[poise::command(slash_command, guild_only)]
 pub(crate) async fn join(ctx: Context<'_>) -> AnyResult<()> {
@@ -25,8 +31,12 @@ pub(crate) async fn join(ctx: Context<'_>) -> AnyResult<()> {
         }
     };
 
-    let manager = get_songbird(ctx.serenity_context()).await?;
-    manager.join(guild_id, channel_id).await?;
+    let serenity_context = ctx.serenity_context();
+
+    let manager = get_songbird(serenity_context).await?;
+    let tts_channel = get_tts_channel(serenity_context).await?;
+
+    bird_join(manager, tts_channel, guild_id, channel_id, ctx.channel_id()).await?;
 
     ctx.say("Voice channel に接続しました！").await?;
 

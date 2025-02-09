@@ -1,6 +1,6 @@
 use std::{collections::HashMap, io::Read, ops::Deref, sync::Arc};
 
-use poise::serenity_prelude::futures::lock::Mutex;
+use tokio::sync::Mutex;
 
 #[derive(Default, Clone)]
 pub struct Dictionary(Arc<Mutex<HashMap<String, String>>>);
@@ -10,7 +10,7 @@ impl Dictionary {
         self.0.lock().await.insert(key, value);
     }
 
-    pub async fn format(&self, text: &str) -> String {
+    pub async fn replace(&self, text: &str) -> String {
         let map = self.0.lock().await;
         let mut text = text.to_string();
         for (i, v) in map.iter() {

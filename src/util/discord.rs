@@ -1,4 +1,4 @@
-use poise::serenity_prelude::Member;
+use poise::serenity_prelude::{Member, User};
 
 pub fn get_user_read_name(member: &Member) -> &str {
     if let Some(name) = &member.nick {
@@ -10,6 +10,6 @@ pub fn get_user_read_name(member: &Member) -> &str {
     &member.user.name
 }
 
-pub fn is_human(member: &Member) -> bool {
-    !member.user.bot && !member.user.system
+pub fn is_human(user: &User) -> bool {
+    !user.bot && !user.system
 }

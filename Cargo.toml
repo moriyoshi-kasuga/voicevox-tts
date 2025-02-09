@@ -6,7 +6,8 @@ edition = "2021"
 [dependencies]
 vvcore = "0.0.2"
 
-anyhow = "1.0"
+dotenvy = "=0.15"
+anyhow = "=1.0"
 
 serde = "=1.0"
 serde_json = "=1.0"

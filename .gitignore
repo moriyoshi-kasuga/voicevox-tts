@@ -3,3 +3,4 @@ voicevox_core/
 download
 audio.wav
 config.toml
+.env

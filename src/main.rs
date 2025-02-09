@@ -1,16 +1,14 @@
 use std::sync::Arc;
 
+use cache::{TtsChannel, TtsChannelKey};
 use commands::{join::join, leave::leave};
-use config::{
-    dictionary::{init_dictionary, Dictionary},
-    init_config,
-    messages::VoiceConfig,
-};
+use config::{dictionary::init_dictionary, init_config};
 use poise::serenity_prelude::{ClientBuilder, FullEvent, GatewayIntents};
 use songbird::SerenityInit;
 use util::{DictionaryKey, VoiceConfigKey, VoicevoxCoreKey};
 use vvcore::*;
 
+pub mod cache;
 pub mod commands;
 pub mod config;
 pub mod event;
@@ -20,13 +18,7 @@ pub type AnyError = Box<dyn std::error::Error + Send + Sync>;
 
 pub type AnyResult<T> = Result<T, AnyError>;
 
-pub struct Data {
-    pub vvc: Arc<VoicevoxCore>,
-    pub voice_config: Arc<VoiceConfig>,
-    pub dictionary: Dictionary,
-}
-
-pub type Context<'a> = poise::Context<'a, Data, AnyError>;
+pub type Context<'a> = poise::Context<'a, (), AnyError>;
 
 const INTENTS: poise::serenity_prelude::GatewayIntents =
     GatewayIntents::non_privileged().union(GatewayIntents::MESSAGE_CONTENT);
@@ -38,15 +30,14 @@ async fn register(ctx: Context<'_>) -> Result<(), AnyError> {
 }
 
 #[tokio::main]
-#[allow(clippy::unwrap_used, clippy::panic)]
+#[allow(clippy::unwrap_used, clippy::panic, clippy::expect_used)]
 async fn main() {
     tracing_subscriber::fmt::init();
 
-    let config = init_config();
+    let _ = dotenvy::dotenv();
+    let discord_token = std::env::var("DISCORD_TOKEN").expect("please set discord token in env");
 
-    if config.discord_token.is_empty() {
-        panic!("please set discord token");
-    };
+    let config = init_config();
 
     let voice_config = Arc::new(config.voices);
     let voice_config_clone = voice_config.clone();
@@ -77,7 +68,7 @@ async fn main() {
                             event::voice_state::handle_voice_state_update(ctx, old, new).await?;
                         }
                         FullEvent::Message { new_message } => {
-                            let _ = new_message;
+                            event::message::handle_message(ctx, new_message).await?;
                         }
                         _ => {}
                     }
@@ -89,16 +80,12 @@ async fn main() {
         .setup(move |ctx, _ready, framework| {
             Box::pin(async move {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
-                Ok(Data {
-                    vvc: Arc::clone(&vvc),
-                    voice_config: Arc::clone(&voice_config).clone(),
-                    dictionary,
-                })
+                Ok(())
             })
         })
         .build();
 
-    let mut client = ClientBuilder::new(config.discord_token, INTENTS)
+    let mut client = ClientBuilder::new(discord_token, INTENTS)
         .framework(framework)
         .register_songbird()
         .await
@@ -109,6 +96,7 @@ async fn main() {
         write.insert::<DictionaryKey>(dict.clone());
         write.insert::<VoicevoxCoreKey>(vv_clone);
         write.insert::<VoiceConfigKey>(voice_config_clone);
+        write.insert::<TtsChannelKey>(TtsChannel::default());
     }
 
     client.start().await.unwrap();

@@ -6,6 +6,7 @@ use songbird::typemap::TypeMapKey;
 use vvcore::VoicevoxCore;
 
 use crate::{
+    cache::{TtsChannel, TtsChannelKey},
     config::{dictionary::Dictionary, messages::VoiceConfig},
     AnyResult,
 };
@@ -63,4 +64,15 @@ pub struct DictionaryKey;
 
 impl TypeMapKey for DictionaryKey {
     type Value = Dictionary;
+}
+
+pub async fn get_tts_channel(ctx: &Context) -> AnyResult<TtsChannel> {
+    let data = ctx.data.read().await;
+
+    let tts_channel = data
+        .get::<TtsChannelKey>()
+        .cloned()
+        .context("TtsChannel is not initialized")?;
+
+    Ok(tts_channel)
 }

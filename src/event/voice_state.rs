@@ -5,9 +5,9 @@ use songbird::Songbird;
 
 use crate::{
     util::{
-        bird::{bird_enqueue, get_songbird},
+        bird::{bird_enqueue, bird_laeve, get_songbird},
         discord::{get_user_read_name, is_human},
-        get_voice_config, get_vvc,
+        get_tts_channel, get_voice_config, get_vvc,
         vvc::gen_tts,
     },
     AnyResult,
@@ -68,12 +68,14 @@ pub async fn handle_voice_state_update(
 
     let members = guild.members(&ctx.cache)?;
 
-    let exists_human = members.iter().any(is_human);
+    let exists_human = members.iter().any(|v| is_human(&v.user));
     if exists_human {
         return Ok(());
     }
 
-    manager.remove(guild_id).await?;
+    let tts_channel = get_tts_channel(ctx).await?;
+
+    bird_laeve(manager, tts_channel, guild_id).await?;
 
     Ok(())
 }
@@ -93,7 +95,7 @@ async fn event(
     let voice_config = get_voice_config(ctx).await?;
     let vvc = get_vvc(ctx).await?;
 
-    if !is_human(member) {
+    if !is_human(&member.user) {
         return Ok(());
     }
 
