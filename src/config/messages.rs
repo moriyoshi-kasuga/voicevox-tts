@@ -13,9 +13,9 @@ pub struct VoiceConfig {
     pub default_speaker_id: u32,
 
     #[serde_inline_default(gen_message!({0},"さんが参加しました"))]
-    pub join: Message,
+    pub join: ConstMessage<1>,
     #[serde_inline_default(gen_message!({0},"さんが退出しました"))]
-    pub leave: Message,
+    pub leave: ConstMessage<1>,
 }
 
 impl DefaultConfig for VoiceConfig {}
@@ -23,7 +23,56 @@ impl DefaultConfig for VoiceConfig {}
 #[derive(Debug)]
 pub enum MessageFormat {
     Text(String),
-    Arg(u8),
+    Arg(usize),
+}
+
+/// N is argument length
+#[derive(Debug)]
+pub struct ConstMessage<const N: usize>(Vec<MessageFormat>);
+
+impl<const N: usize> ConstMessage<N> {
+    pub fn format(&self, args: &[&str; N]) -> String {
+        let mut text = String::new();
+
+        for i in &self.0 {
+            match i {
+                MessageFormat::Text(s) => text.push_str(s),
+                MessageFormat::Arg(n) => text.push_str(args[*n]),
+            }
+        }
+
+        text
+    }
+}
+
+impl<'de, const N: usize> serde::Deserialize<'de> for ConstMessage<N> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let formats = Vec::<MessageFormat>::deserialize(deserializer)?;
+        for i in &formats {
+            if let MessageFormat::Arg(n) = i {
+                if *n >= N {
+                    return Err(serde::de::Error::custom(format!(
+                        "please set number between 0 and {} exclusive",
+                        N
+                    )));
+                }
+            }
+        }
+
+        Ok(Self(formats))
+    }
+}
+
+impl<const N: usize> serde::Serialize for ConstMessage<N> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        self.0.serialize(serializer)
+    }
 }
 
 impl<'de> serde::Deserialize<'de> for MessageFormat {
@@ -45,11 +94,8 @@ impl<'de> serde::Deserialize<'de> for MessageFormat {
                 E: serde::de::Error,
             {
                 if v.starts_with('{') && v.ends_with('}') {
-                    let number = v[1..v.len() - 1].parse::<u8>().map_err(|err| {
-                        serde::de::Error::custom(format!(
-                            "please set number between 0 ~ 255: {}",
-                            err
-                        ))
+                    let number = v[1..v.len() - 1].parse::<usize>().map_err(|err| {
+                        serde::de::Error::custom(format!("please set number: {}", err))
                     })?;
                     Ok(MessageFormat::Arg(number))
                 } else {
@@ -82,7 +128,7 @@ mod macros {
             MessageFormat::Arg($number)
         };
         ($($tt:tt),*) => {
-            vec![$(gen_message!(@gen $tt)),*]
+            ConstMessage(vec![$(gen_message!(@gen $tt)),*])
         }
     }
 

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use commands::{join::join, leave::leave};
 use config::{
     dictionary::{init_dictionary, Dictionary},
@@ -6,6 +8,7 @@ use config::{
 };
 use poise::serenity_prelude::{ClientBuilder, FullEvent, GatewayIntents};
 use songbird::SerenityInit;
+use util::{DictionaryKey, VoiceConfigKey, VoicevoxCoreKey};
 use vvcore::*;
 
 pub mod commands;
@@ -18,8 +21,8 @@ pub type AnyError = Box<dyn std::error::Error + Send + Sync>;
 pub type AnyResult<T> = Result<T, AnyError>;
 
 pub struct Data {
-    pub vvc: VoicevoxCore,
-    pub voice_config: VoiceConfig,
+    pub vvc: Arc<VoicevoxCore>,
+    pub voice_config: Arc<VoiceConfig>,
     pub dictionary: Dictionary,
 }
 
@@ -45,10 +48,14 @@ async fn main() {
         panic!("please set discord token");
     };
 
+    let voice_config = Arc::new(config.voices);
+    let voice_config_clone = voice_config.clone();
+
     let dictionary = init_dictionary();
     let dict = dictionary.clone();
 
-    let vvc = init_vvc();
+    let vvc = Arc::new(init_vvc());
+    let vv_clone = vvc.clone();
 
     // COMMANDS
     let commands = vec![register(), join(), leave()];
@@ -66,9 +73,8 @@ async fn main() {
             event_handler: |ctx, event, _framework, _data| {
                 Box::pin(async move {
                     match event {
-                        FullEvent::VoiceStateUpdate { old: _, new } => {
-                            event::voice_state::handle_voice_state_update(ctx, new.guild_id)
-                                .await?;
+                        FullEvent::VoiceStateUpdate { old, new } => {
+                            event::voice_state::handle_voice_state_update(ctx, old, new).await?;
                         }
                         FullEvent::Message { new_message } => {
                             let _ = new_message;
@@ -84,20 +90,28 @@ async fn main() {
             Box::pin(async move {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
                 Ok(Data {
-                    vvc,
-                    voice_config: config.voices,
+                    vvc: Arc::clone(&vvc),
+                    voice_config: Arc::clone(&voice_config).clone(),
                     dictionary,
                 })
             })
         })
         .build();
 
-    let client = ClientBuilder::new(config.discord_token, INTENTS)
+    let mut client = ClientBuilder::new(config.discord_token, INTENTS)
         .framework(framework)
         .register_songbird()
-        .await;
+        .await
+        .unwrap();
 
-    client.unwrap().start().await.unwrap();
+    {
+        let mut write = client.data.write().await;
+        write.insert::<DictionaryKey>(dict.clone());
+        write.insert::<VoicevoxCoreKey>(vv_clone);
+        write.insert::<VoiceConfigKey>(voice_config_clone);
+    }
+
+    client.start().await.unwrap();
 
     dict.save().await;
 }
